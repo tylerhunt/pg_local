@@ -15,7 +15,6 @@ PostgreSQL for each project or client.
 - macOS
 - [direnv][] — triggers the environment to be loaded
 - Ruby — used to dynamically determine free port numbers
-- [dot-bash][] - for ANSI color escape codes
 
 ## Usage
 
@@ -55,4 +54,3 @@ configuration is needed there.
 Copyright © 2019 Tyler Hunt. See LICENSE for details.
 
 [direnv]: https://direnv.net
-[dot-bash]: https://github.com/tylerhunt/dot-bash
