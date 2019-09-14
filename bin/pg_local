@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+
+source ~/.bash/helpers/colors.bash
+
+pg_local_dir=${PGLOCAL-".postgresql"}
+
+pg_local_direnv() {
+  if [ -z "`grep -s pg_local .envrc`" ]; then
+    echo "source pg_local env" >> .envrc
+    echo -e "PostgreSQL: ${CYAN}installed${WHITE}"
+    direnv allow
+  fi
+}
+
+pg_local_init() {
+  if ! pg_local_initialized; then
+    echo -en "PostgreSQL: ${WHITE}"
+    mkdir -p "$pg_local_dir"
+    pg_ctl initdb -D $pg_local_dir -s -o "-A trust"
+    echo -e "${GREEN}initialized${WHITE}"
+  else
+    return 1
+  fi
+}
+
+pg_local_initialized() {
+  [[ -d "$pg_local_dir" ]]
+}
+
+pg_local_env() {
+  if pg_local_is_running; then
+    export PGDATA=`pwd`/${pg_local_dir}
+    export PGPORT=`pg_local_port`
+  fi
+}
+
+pg_local_is_running() {
+  [[ -n "`pg_ctl status -D $pg_local_dir | grep PID`" ]]
+}
+
+pg_local_port() {
+  pg_ctl status -D $pg_local_dir | tail -n 1 | cut -d " " -f 5 | sed 's/"//g'
+}
+
+pg_local_start() {
+  if ! pg_local_is_running; then
+    local log="$pg_local_dir/postgresql.log"
+    local port=$(ruby -r socket -e 'puts TCPServer.open(0).addr[1]')
+    pg_ctl start -D "$pg_local_dir" -l "$log" -s -o "-p $port"
+    echo -e "PostgreSQL: ${GREEN}started${WHITE}"
+  fi
+}
+
+pg_local_status() {
+  if pg_local_initialized; then
+    if pg_local_is_running; then
+      echo -e "PostgreSQL: ${GREEN}running${WHITE}"
+    else
+      echo -e "PostgreSQL: ${RED}stopped${WHITE}"
+    fi
+  else
+    echo -e "PostgreSQL: ${YELLOW}uninitialized${WHITE}"
+  fi
+}
+
+pg_local_stop() {
+  if pg_local_is_running; then
+    pg_ctl stop -D "$pg_local_dir" -s
+    echo -e "PostgreSQL: ${RED}stopped${WHITE}"
+  fi
+}
+
+case $1 in
+  init)
+    if [ ! -d "$pg_local_dir" ]; then
+      pg_local_init
+    else
+      echo -en "PostgreSQL: ${GREEN}initialized${WHITE}"
+    fi
+    ;;
+  setup)
+    pg_local_direnv
+    ;;
+  stop)
+    pg_local_stop
+    ;;
+  start)
+    pg_local_start
+    ;;
+  restart)
+    pg_local_stop
+    pg_local_start
+    ;;
+  status)
+    pg_local_status
+    ;;
+  env)
+    if pg_local_init; then
+      pg_local_start
+    else
+      pg_local_status
+    fi
+    pg_local_env
+    ;;
+  *)
+    echo "Usage: $(basename $0) <init|setup|stop|start|restart|status|env>"
+esac
