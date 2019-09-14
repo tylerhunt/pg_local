@@ -8,7 +8,11 @@ yellow="\033[0;33m"
 cyan="\033[0;36m"
 white="\033[0;37m"
 
-pg_local_direnv() {
+pg_local_direnv_reload() {
+  direnv reload
+}
+
+pg_local_direnv_setup() {
   if [ -z "`grep -s pg_local .envrc`" ]; then
     echo "source pg_local env" >> .envrc
     echo -e "PostgreSQL: ${cyan}installed${white}"
@@ -60,7 +64,7 @@ pg_local_status() {
     if pg_local_is_running; then
       echo -e "PostgreSQL: ${green}running${white}"
     else
-      echo -e "PostgreSQL: ${red}stopped${white}"
+      echo -e "PostgreSQL: ${red}not running${white}"
     fi
   else
     echo -e "PostgreSQL: ${yellow}uninitialized${white}"
@@ -83,17 +87,20 @@ case $1 in
     fi
     ;;
   setup)
-    pg_local_direnv
+    pg_local_direnv_setup
     ;;
   stop)
     pg_local_stop
+    pg_local_direnv_reload
     ;;
   start)
     pg_local_start
+    pg_local_direnv_reload
     ;;
   restart)
     pg_local_stop
     pg_local_start
+    pg_local_direnv_reload
     ;;
   status)
     pg_local_status
