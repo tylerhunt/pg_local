@@ -8,7 +8,7 @@ yellow="\033[0;33m"
 cyan="\033[0;36m"
 white="\033[0;37m"
 
-pg_local_direnv_setup() {
+__direnv_setup() {
   if [ -z "`grep -s pg_local .envrc`" ]; then
     echo "source pg_local env" >> .envrc
     echo -e "direnv: ${cyan}added pg_local${white}"
@@ -16,8 +16,8 @@ pg_local_direnv_setup() {
   fi
 }
 
-pg_local_init() {
-  if ! pg_local_initialized; then
+__init() {
+  if ! __initialized; then
     echo -en "PostgreSQL: ${white}"
     mkdir -p "$pg_local_dir"
     pg_ctl initdb -D $pg_local_dir -s -o "-A trust"
@@ -25,11 +25,11 @@ pg_local_init() {
   fi
 }
 
-pg_local_initialized() {
+__initialized() {
   [[ -d "$pg_local_dir" ]]
 }
 
-pg_local_install() {
+__install() {
   local version=${1}
 
   if [ -n "`command -v asdf_local`" ]; then
@@ -39,23 +39,23 @@ pg_local_install() {
   fi
 }
 
-pg_local_env() {
-  if pg_local_is_running; then
+__env() {
+  if __is_running; then
     export PGDATA=`pwd`/${pg_local_dir}
-    export PGPORT=`pg_local_port`
+    export PGPORT=`__port`
   fi
 }
 
-pg_local_is_running() {
+__is_running() {
   [[ -n "`pg_ctl status -D $pg_local_dir | grep PID`" ]]
 }
 
-pg_local_port() {
+__port() {
   pg_ctl status -D $pg_local_dir | tail -n 1 | cut -d " " -f 5 | sed 's/"//g'
 }
 
-pg_local_start() {
-  if ! pg_local_is_running; then
+__start() {
+  if ! __is_running; then
     local log="$pg_local_dir/postgresql.log"
     local port=$(ruby -r socket -e 'puts TCPServer.open(0).addr[1]')
     pg_ctl start -D "$pg_local_dir" -l "$log" -s -o "-p $port"
@@ -63,9 +63,9 @@ pg_local_start() {
   fi
 }
 
-pg_local_status() {
-  if pg_local_initialized; then
-    if pg_local_is_running; then
+__status() {
+  if __initialized; then
+    if __is_running; then
       echo -e "PostgreSQL: ${green}running${white}"
     else
       echo -e "PostgreSQL: ${red}not running${white}"
@@ -75,8 +75,8 @@ pg_local_status() {
   fi
 }
 
-pg_local_stop() {
-  if pg_local_is_running; then
+__stop() {
+  if __is_running; then
     pg_ctl stop -D "$pg_local_dir" -s
     echo -e "PostgreSQL: ${red}stopped${white}"
   fi
@@ -86,8 +86,8 @@ action=${1}
 
 case ${action} in
   init)
-    if ! pg_local_initialized; then
-      pg_local_init
+    if ! __initialized; then
+      __init
     else
       echo -e "PostgreSQL: ${green}initialized${white}"
     fi
@@ -96,36 +96,36 @@ case ${action} in
     version=${2}
     (
       set -e
-      pg_local_install ${version}
-      pg_local_init
-      pg_local_start
-      pg_local_direnv_setup
+      __install ${version}
+      __init
+      __start
+      __direnv_setup
       set +e
     )
     ;;
   stop)
-    pg_local_stop
+    __stop
     direnv reload
     ;;
   start)
-    pg_local_start
+    __start
     direnv reload
     ;;
   restart)
-    pg_local_stop
-    pg_local_start
+    __stop
+    __start
     direnv reload
     ;;
   status)
-    pg_local_status
+    __status
     ;;
   env)
-    if pg_local_init; then
-      pg_local_start
+    if __init; then
+      __start
     else
-      pg_local_status
+      __status
     fi
-    pg_local_env
+    __env
     ;;
   *)
     echo "Usage: $(basename $0) <init|setup|stop|start|restart|status|env>"
