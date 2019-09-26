@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 pg_local_dir=${PGLOCAL-".postgresql"}
 
@@ -44,6 +45,9 @@ __install() {
 }
 
 __env() {
+  __verify_initialized
+  __is_running && __status || __start
+
   if __is_running; then
     export PGDATA=`pwd`/${pg_local_dir}
     export PGPORT=`__port`
@@ -51,14 +55,23 @@ __env() {
 }
 
 __is_running() {
-  [[ -n "`pg_ctl status -D $pg_local_dir | grep PID`" ]]
+  [[ -n "`pg_ctl status -D $pg_local_dir 2> /dev/null | grep PID`" ]]
 }
 
 __port() {
   pg_ctl status -D $pg_local_dir | tail -n 1 | cut -d " " -f 5 | sed 's/"//g'
 }
 
+__verify_initialized() {
+  if ! __initialized; then
+    echo -e "PostgreSQL: ${yellow}uninitialized${white}"
+    return 1
+  fi
+}
+
 __start() {
+  __verify_initialized
+
   if ! __is_running; then
     local log="$pg_local_dir/postgresql.log"
     local port=$(ruby -r socket -e 'puts TCPServer.open(0).addr[1]')
@@ -68,18 +81,18 @@ __start() {
 }
 
 __status() {
-  if __initialized; then
-    if __is_running; then
-      echo -e "PostgreSQL: ${green}running${white}"
-    else
-      echo -e "PostgreSQL: ${red}not running${white}"
-    fi
+  __verify_initialized
+
+  if __is_running; then
+    echo -e "PostgreSQL: ${green}running${white}"
   else
-    echo -e "PostgreSQL: ${yellow}uninitialized${white}"
+    echo -e "PostgreSQL: ${red}not running${white}"
   fi
 }
 
 __stop() {
+  __verify_initialized
+
   if __is_running; then
     pg_ctl stop -D "$pg_local_dir" -s
     echo -e "PostgreSQL: ${red}stopped${white}"
@@ -98,14 +111,10 @@ case ${action} in
     ;;
   setup)
     version=${2}
-    (
-      set -e
-      __install ${version}
-      __init
-      __start
-      __direnv_setup
-      set +e
-    )
+    __install ${version}
+    __init
+    __start
+    __direnv_setup
     ;;
   stop)
     __stop
@@ -124,11 +133,6 @@ case ${action} in
     __status
     ;;
   env)
-    if __init; then
-      __start
-    else
-      __status
-    fi
     __env
     ;;
   *)
