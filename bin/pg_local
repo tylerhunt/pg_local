@@ -8,6 +8,10 @@ yellow="\033[0;33m"
 cyan="\033[0;36m"
 white="\033[0;37m"
 
+__direnv_reload() {
+  direnv reload 2> /dev/null
+}
+
 __direnv_setup() {
   if [ -z "`grep -s pg_local .envrc`" ]; then
     echo "source pg_local env" >> .envrc
@@ -105,16 +109,16 @@ case ${action} in
     ;;
   stop)
     __stop
-    direnv reload
+    __direnv_reload
     ;;
   start)
     __start
-    direnv reload
+    __direnv_reload
     ;;
   restart)
     __stop
     __start
-    direnv reload
+    __direnv_reload
     ;;
   status)
     __status
