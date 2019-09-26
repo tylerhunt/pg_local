@@ -37,7 +37,7 @@ __initialized() {
 __install() {
   local version=${1}
 
-  if [ -n "`command -v asdf_local`" ]; then
+  if [ -n "$(type -t asdf_local)" ]; then
     asdf_local setup postgres ${version}
   else
     echo -e "asdf_local: ${red}missing${white}"
