@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-pg_local_dir=${PGLOCAL-".postgresql"}
+pg_local_dir="${PGLOCAL-".postgresql"}"
 
 red="\033[0;31m"
 green="\033[0;32m"
@@ -14,7 +14,7 @@ __direnv_reload() {
 }
 
 __direnv_setup() {
-  if [ -z "`grep -s pg_local .envrc`" ]; then
+  if [ -z "$(grep -s pg_local .envrc)" ]; then
     echo "source pg_local env" >> .envrc
     echo -e "direnv: ${cyan}added pg_local${white}"
     direnv allow
@@ -24,18 +24,18 @@ __direnv_setup() {
 __init() {
   if ! __initialized; then
     echo -en "PostgreSQL: ${white}"
-    mkdir -p "$pg_local_dir"
-    pg_ctl initdb -D $pg_local_dir -s -o "-A trust"
+    mkdir -p "${pg_local_dir}"
+    pg_ctl initdb -D "${pg_local_dir}" -s -o "-A trust"
     echo -e "${green}initialized${white}"
   fi
 }
 
 __initialized() {
-  [[ -d "$pg_local_dir" ]]
+  [[ -d "${pg_local_dir}" ]]
 }
 
 __install() {
-  local version=${1}
+  local version="${1}"
 
   if [ -n "$(type -t asdf_local)" ]; then
     asdf_local setup postgres ${version}
@@ -49,17 +49,17 @@ __env() {
   __is_running && __status || __start
 
   if __is_running; then
-    export PGDATA=`pwd`/${pg_local_dir}
-    export PGPORT=`__port`
+    export PGDATA="$(pwd)/${pg_local_dir}"
+    export PGPORT="$(__port)"
   fi
 }
 
 __is_running() {
-  [[ -n "`pg_ctl status -D $pg_local_dir 2> /dev/null | grep PID`" ]]
+  [[ -n "$(pg_ctl status -D ${pg_local_dir} 2> /dev/null | grep PID)" ]]
 }
 
 __port() {
-  pg_ctl status -D $pg_local_dir | tail -n 1 | cut -d " " -f 5 | sed 's/"//g'
+  pg_ctl status -D ${pg_local_dir} | tail -n 1 | cut -d " " -f 5 | sed 's/"//g'
 }
 
 __verify_initialized() {
@@ -73,9 +73,9 @@ __start() {
   __verify_initialized
 
   if ! __is_running; then
-    local log="$pg_local_dir/postgresql.log"
-    local port=$(ruby -r socket -e 'puts TCPServer.open(0).addr[1]')
-    pg_ctl start -D "$pg_local_dir" -l "$log" -s -o "-p $port"
+    local log="${pg_local_dir}/postgresql.log"
+    local port="$(ruby -r socket -e 'puts TCPServer.open(0).addr[1]')"
+    pg_ctl start -D "${pg_local_dir}" -l "${log}" -s -o "-p ${port}"
     echo -e "PostgreSQL: ${green}started${white}"
   fi
 }
@@ -94,12 +94,12 @@ __stop() {
   __verify_initialized
 
   if __is_running; then
-    pg_ctl stop -D "$pg_local_dir" -s
+    pg_ctl stop -D "${pg_local_dir}" -s
     echo -e "PostgreSQL: ${red}stopped${white}"
   fi
 }
 
-action=${1}
+action="${1}"
 
 case ${action} in
   init)
@@ -110,8 +110,8 @@ case ${action} in
     fi
     ;;
   setup)
-    version=${2}
-    __install ${version}
+    version="${2}"
+    __install "${version}"
     __init
     __start
     __direnv_setup
