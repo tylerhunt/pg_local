@@ -8,14 +8,10 @@ yellow="\033[0;33m"
 cyan="\033[0;36m"
 white="\033[0;37m"
 
-pg_local_direnv_reload() {
-  direnv reload
-}
-
 pg_local_direnv_setup() {
   if [ -z "`grep -s pg_local .envrc`" ]; then
     echo "source pg_local env" >> .envrc
-    echo -e "PostgreSQL: ${cyan}installed${white}"
+    echo -e "direnv: ${cyan}added pg_local${white}"
     direnv allow
   fi
 }
@@ -26,8 +22,6 @@ pg_local_init() {
     mkdir -p "$pg_local_dir"
     pg_ctl initdb -D $pg_local_dir -s -o "-A trust"
     echo -e "${green}initialized${white}"
-  else
-    return 1
   fi
 }
 
@@ -78,29 +72,37 @@ pg_local_stop() {
   fi
 }
 
-case $1 in
+action=${1}
+
+case ${action} in
   init)
-    if [ ! -d "$pg_local_dir" ]; then
+    if ! pg_local_initialized; then
       pg_local_init
     else
-      echo -en "PostgreSQL: ${green}initialized${white}"
+      echo -e "PostgreSQL: ${green}initialized${white}"
     fi
     ;;
   setup)
-    pg_local_direnv_setup
+    (
+      set -e
+      pg_local_init
+      pg_local_start
+      pg_local_direnv_setup
+      set +e
+    )
     ;;
   stop)
     pg_local_stop
-    pg_local_direnv_reload
+    direnv reload
     ;;
   start)
     pg_local_start
-    pg_local_direnv_reload
+    direnv reload
     ;;
   restart)
     pg_local_stop
     pg_local_start
-    pg_local_direnv_reload
+    direnv reload
     ;;
   status)
     pg_local_status
