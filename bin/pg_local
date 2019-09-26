@@ -29,6 +29,16 @@ pg_local_initialized() {
   [[ -d "$pg_local_dir" ]]
 }
 
+pg_local_install() {
+  local version=${1}
+
+  if [ -n "`command -v asdf_local`" ]; then
+    asdf_local setup postgres ${version}
+  else
+    echo -e "asdf_local: ${red}missing${white}"
+  fi
+}
+
 pg_local_env() {
   if pg_local_is_running; then
     export PGDATA=`pwd`/${pg_local_dir}
@@ -83,8 +93,10 @@ case ${action} in
     fi
     ;;
   setup)
+    version=${2}
     (
       set -e
+      pg_local_install ${version}
       pg_local_init
       pg_local_start
       pg_local_direnv_setup
