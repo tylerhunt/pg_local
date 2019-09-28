@@ -46,7 +46,7 @@ __install() {
 
 __env() {
   __verify_initialized
-  __is_running && __status || __start
+  __status
 
   if __is_running; then
     export PGDATA="$(pwd)/${pg_local_dir}"
