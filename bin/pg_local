@@ -40,7 +40,8 @@ __install() {
   if [ -n "$(type -t asdf_local)" ]; then
     asdf_local setup postgres ${version}
   else
-    echo -e "asdf_local: ${red}missing${white}"
+    asdf local postgres ${version}
+    asdf install
   fi
 }
 
