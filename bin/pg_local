@@ -75,7 +75,7 @@ __start() {
 
   if ! __is_running; then
     local log="${pg_local_dir}/postgresql.log"
-    local port="$(ruby -r socket -e 'puts TCPServer.open(0).addr[1]')"
+    local port="$(/usr/bin/ruby -r socket -e 'puts TCPServer.open(0).addr[1]')"
     pg_ctl start -D "${pg_local_dir}" -l "${log}" -s -o "-p ${port}"
     echo -e "PostgreSQL: ${green}started${white}"
   fi
