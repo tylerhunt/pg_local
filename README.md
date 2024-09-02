@@ -40,6 +40,7 @@ configuration is needed there.
   - `pg_local restart` — restarts the local PostgreSQL server
   - `pg_local status` — outputs whether the local server is running or not
   - `pg_local env` — exports the `PGDATA` and `PGPORT` environment variables
+  - `pg_local upgrade <new_version>` — upgrades the local instance
 
 ## Contributing
 

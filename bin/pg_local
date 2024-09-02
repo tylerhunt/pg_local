@@ -45,6 +45,43 @@ __install() {
   fi
 }
 
+__upgrade() {
+  __verify_initialized
+
+  local old_version="$(asdf current postgres | cut -w -f 2)"
+  local new_version="${1}"
+
+  echo -e "PostgreSQL: upgrading ${cyan}${old_version}${white} to ${cyan}${new_version}${white}…"
+
+  if [[ -z "${old_version}" || -z "${new_version}" ]]; then
+    echo "Usage: $(basename $0) upgrade <new_version>"
+    exit 1
+  fi
+
+  if [[ "${old_version}" != "${new_version}" ]]; then
+    asdf install postgres $old_version
+    asdf install postgres $new_version
+    asdf local postgres $new_version
+
+    __stop
+    mv "${pg_local_dir}" "${pg_local_dir}-${old_version}"
+    __init
+
+    pg_upgrade \
+      --old-bindir="$(asdf where postgres ${old_version})/bin" \
+      --new-bindir="$(asdf where postgres ${new_version})/bin" \
+      --old-datadir="${pg_local_dir}-${old_version}" \
+      --new-datadir="${pg_local_dir}"
+
+    ./delete_old_cluster.sh
+    rm delete_old_cluster.sh
+
+    __start
+  fi
+
+  echo -e "PostgreSQL: ${green}done${white}"
+}
+
 __env() {
   __verify_initialized
   __status
@@ -117,6 +154,10 @@ case ${action} in
     __start
     __direnv_setup
     ;;
+  upgrade)
+    new_version="${2}"
+    __upgrade "${new_version}"
+    ;;
   stop)
     __stop
     __direnv_reload
@@ -137,5 +178,5 @@ case ${action} in
     __env
     ;;
   *)
-    echo "Usage: $(basename $0) <init|setup|stop|start|restart|status|env>"
+    echo "Usage: $(basename $0) <init|setup|stop|start|restart|status|env|upgrade>"
 esac
