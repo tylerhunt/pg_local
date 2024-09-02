@@ -32,7 +32,7 @@ configuration is needed there.
 ## Commands
 
   - `pg_local init` — initializes a local copy of PostgreSQL
-  - `pg_local setup` — hooks `pg_local into the `.envrc` in the current
+  - `pg_local setup <version>` — hooks `pg_local into the `.envrc` in the current
     directory
   - `pg_local start` — starts the local PostgreSQL server with a dynamic port
     number
