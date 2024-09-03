@@ -83,7 +83,6 @@ __upgrade() {
 }
 
 __env() {
-  __verify_initialized
   __status
 
   if __is_running; then
