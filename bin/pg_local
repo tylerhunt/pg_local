@@ -82,6 +82,22 @@ __upgrade() {
   echo -e "PostgreSQL: ${green}done${white}"
 }
 
+__exec() {
+  local pg_local_dir="$(__find_up)"
+  __start
+  eval "${args}"
+}
+
+__find_up() {
+  local path=$(pwd)
+
+  while [[ "$path" && ! -d "$path/$pg_local_dir" ]]; do
+    path="${path%/*}"
+  done
+
+  echo "${path}/${pg_local_dir}"
+}
+
 __env() {
   __status
 
@@ -137,6 +153,8 @@ __stop() {
 }
 
 action="${1}"
+shift
+args="${@}"
 
 case ${action} in
   init)
@@ -173,9 +191,12 @@ case ${action} in
   status)
     __status
     ;;
+  exec)
+    __exec
+    ;;
   env)
     __env
     ;;
   *)
-    echo "Usage: $(basename $0) <init|setup|stop|start|restart|status|env|upgrade>"
+    echo "Usage: $(basename $0) <init|setup|stop|start|restart|status|env|exec|upgrade>"
 esac
